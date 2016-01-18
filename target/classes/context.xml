@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:int-stream="http://www.springframework.org/schema/integration/stream"
+	xmlns:file="http://www.springframework.org/schema/integration/file"
+	xmlns:sftp="http://www.springframework.org/schema/integration/sftp"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/integration/stream 
+	    http://www.springframework.org/schema/beans/spring-integration-stream.xsd
+		http://www.springframework.org/schema/task 
+		http://www.springframework.org/schema/beans/spring-task.xsd
+		http://www.springframework.org/schema/integration-sftp 
+		http://www.springframework.org/schema/integration/sftp/spring-integration-sftp.xsd
+		http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/integration 
+		http://www.springframework.org/schema/integration/spring-integration-4.2.xsd
+		http://www.springframework.org/schema/util 
+		http://www.springframework.org/schema/beans/spring-util.xsd">
+		
+
+<int:channel id="request" />
+<int:channel id="reply" />
+
+<int:channel id="errorChannel" />
+
+
+<int:channel id="stringChannel" />
+<int:channel id="stringInChannel" />
+<int:channel id="stringOutChannel" />
+
+<int:aggregator id="stringAggregator"
+	input-channel="stringInChannel"
+	output-channel="stringOutChannel"
+	correlation-strategy-expression="payload.substring(1,3)"
+	release-strategy-expression="size() == 2" />
+
+<int:gateway id="gatewaybean" service-interface="com.test.spring_aggregator.service.MessageGateway"
+	default-request-channel="request"
+	default-reply-channel="reply" />
+	
+<int:service-activator input-channel="stringChannel" ref="processor" method="process" output-channel="stringInChannel" />
+<int:service-activator input-channel="stringOutChannel" ref="reader" method="process" />
+
+<bean id="processor" class="com.test.spring_aggregator.integration.Processor"/>
+<bean id="reader" class="com.test.spring_aggregator.integration.Reader"/>	
+
+
+
+
+<int:channel id="payChannel" />
+<int:channel id="payInChannel" />
+<int:channel id="payOutChannel" />
+
+
+<int:gateway id="paygatewaybean" service-interface="com.test.spring_aggregator.service.PaymentGateway"
+	default-request-channel="request"
+	default-reply-channel="reply" />
+
+
+
+<int:aggregator id="paymentAggregator"
+    input-channel="payInChannel"
+    output-channel="payOutChannel"	
+	correlation-strategy-expression="payload.type"
+	release-strategy-expression="size() ==2"
+/>
+
+<int:service-activator input-channel="payChannel" ref="processor" method="processPayment" output-channel="payInChannel" />
+<int:service-activator input-channel="payOutChannel" ref="reader" method="processPayment" />
+	
+</beans>
